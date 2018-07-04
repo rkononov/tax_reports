@@ -3,6 +3,7 @@ require "roo-xls"
 require "csv"
 require "pry"
 require "unicode_utils"
+require "geocoder"
 
 def get_key_pair_values(sheet, offset, column_key, column_value, initial_offset = 15)
   i = initial_offset
@@ -56,31 +57,17 @@ end
 
 def find_location(workplace)
   return workplace unless workplace
-  d = UnicodeUtils.downcase(workplace.strip.lstrip)
-  return "кызыл-кыя" if d.include?("кызыл-кыя") || d.include?("кызыл-ки")
-  %w(первомай каракуль кочкор сузак араван ак-суй базар-коргон токтогул ноокат орловка кара-кол кок-жангак алай
-     кемин манас каинда кочкор-ата ак-тал ат-баш исфана тон ноокен панфилов кант кербен шопоков кадамжай
-     жайыл аламудун сокулук каракол тогуз-торо джумгал московский чон-алай тюп жайыл бишкек ош майлуу-суу баткен кара-балта
-     талас жалал-абад нарын лейлек чолпон-ата сулюкта аксый узген аксуй кара-куль токмок айдаркен чаткал чуй иссык-куль).map do |city|
-    return city if d.include?(city)
+  unless @geo
+    @geo = {}
+    CSV.readlines("geo.csv").each do |l|
+      @geo[l[0]] = {lat: l[1], lon: l[2], area: l[3], city: l[4]}
+    end
   end
-  return "джети-огуз" if d.include?("джети-ог") || d.include?("джети ог") || d.include?("джеты-ог")
-  return "таш-комур" if d.include?("таш-к")
-  return "кара-буура" if d.include?("кара-бу")
-  return "кара-суу" if d.include?("кара-су")
-  return "балыкчи" if d.include?("балыкч")
-  return "чолпон-ата" if d.include?("чолпон ата")
-  return "ала-бука" if d.include?("ала-бук")
-  return "московский" if d.include?("московская")
-  return "ысык-ата" if d.include?("ысык-ат")
-  return "кара кулжа" if d.include?("кара кулж") || d.include?("кара-кулж")
-  return "сулюкта" if d.include?("сулюкт")
-  return "бакай ата" if d.include?("бакай-ат")
-  return "аламудун" if d.include?("аламунская")
-  return "майлуу-суу" if d.include?("майлуу-су")
-  return "талас" if d.include?("тааласский")
-  return "бишкек" if %w(полномочное агентстве верзовный миграции агентсво институт правительство военный предствительство центр кенеш комитет гвардия комитет фон национальный штаб министер агентство служба департамент аппарат инспекц комиссия палата прокуратура верховный управление).any? { |v| d.include?(v) }
-  return d
+  if @geo[workplace]
+    @geo[workplace]
+  else
+    {:lat => "42.8807207", :lon => "74.6092764", :area => "Чуйская область", :city => "Бишкек"}
+  end
 end
 
 all_values = []
@@ -107,7 +94,7 @@ Dir.glob("files/*.xlsx").each_with_index do |f, index|
   sheet = (workbook.sheets.count > 3) ? workbook.sheet(workbook.sheets.count - 1) : workbook.sheet(0)
   year = f[6..9].to_i - 1
   offset = 5 - (1..10).find { |x| sheet.cell(x, 1) && sheet.cell(x, 1)[0..11] == "Наименование" }
-  workplace = sheet.cell(5 - offset, 8)
+  workplace = sheet.cell(5 - offset, 8).strip
   place = find_location(workplace)
   full_name = sheet.cell(8 - offset, 8)
   position = sheet.cell(9 - offset, 8)
@@ -158,7 +145,7 @@ Dir.glob("files/*.xlsx").each_with_index do |f, index|
 end
 
 CSV.open("report.csv", "w") do |csv|
-  csv << ["File", "Year", "Workplace", "Position", "CleanedPosition", "Place", "FullName", "Gender", "TotalIncome", "ReporterIncome", "SpouseIncome",
+  csv << ["File", "Year", "Workplace", "Position", "CleanedPosition", "PlaceLat", "PlaceLon", "PlaceArea", "PlaceCity", "FullName", "Gender", "TotalIncome", "ReporterIncome", "SpouseIncome",
           (1..max_income_length).map { |i| "Income#{i}" },
           (1..max_outcome_length).map { |i| "Outcome#{i}" },
           (1..max_estate_length / 2).map { |i| ["RealEstateType#{i}", "RealEstateArea#{i}"] },
@@ -168,7 +155,8 @@ CSV.open("report.csv", "w") do |csv|
           (1..max_relative_estate_length / 2).map { |i| ["RelativeRealEstateType#{i}", "RelativeRealEstateArea#{i}"] },
           (1..max_relative_property_length / 2).map { |i| ["RelativePropertyType#{i}", "RelativePropertyDescription#{i}"] }].flatten
   all_values.each do |v|
-    csv << [v[:f], v[:year], v[:workplace], v[:position], v[:cleaned_position], v[:place], v[:full_name], v[:gender], v[:total_income], v[:reporter_income], v[:spouse_income],
+    csv << [v[:f], v[:year], v[:workplace], v[:position], v[:cleaned_position], v[:place][:lat], v[:place][:lon], v[:place][:area], v[:place][:city],
+            v[:full_name], v[:gender], v[:total_income], v[:reporter_income], v[:spouse_income],
             format_values(v[:income], max_income_length),
             format_values(v[:outcome], max_outcome_length),
             format_values(v[:real_estate], max_estate_length),
@@ -179,4 +167,3 @@ CSV.open("report.csv", "w") do |csv|
             format_values(v[:relative_property], max_relative_property_length)].flatten
   end
 end
-pry
