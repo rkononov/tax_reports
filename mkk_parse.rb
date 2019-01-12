@@ -92,7 +92,7 @@ Dir.glob("files/2015-2016/*.xlsx").each_with_index do |f, index|
                Roo::Spreadsheet.open(f, extension: :xls)
              end
   sheet = (workbook.sheets.count > 3) ? workbook.sheet(workbook.sheets.count - 1) : workbook.sheet(0)
-  year = f[6..9].to_i - 1
+  year = f[16..19].to_i - 1
   offset = 5 - (1..10).find { |x| sheet.cell(x, 1) && sheet.cell(x, 1)[0..11] == "Наименование" }
   workplace = sheet.cell(5 - offset, 8).strip
   place = find_location(workplace)
