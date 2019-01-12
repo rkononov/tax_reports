@@ -82,7 +82,7 @@ max_relative_property_length = 0
 max_relative_income_length = 0
 max_relative_outcome_length = 0
 
-Dir.glob("files/*.xlsx").each_with_index do |f, index|
+Dir.glob("files/2015-2016/*.xlsx").each_with_index do |f, index|
   puts "Processing:#{f}, index: #{index}"
   next if f[0..2] == "bad"
 
@@ -144,7 +144,7 @@ Dir.glob("files/*.xlsx").each_with_index do |f, index|
   end
 end
 
-CSV.open("report.csv", "w") do |csv|
+CSV.open("report_2015_2016.csv", "w") do |csv|
   csv << ["File", "Year", "Workplace", "Position", "CleanedPosition", "PlaceLat", "PlaceLon", "PlaceArea", "PlaceCity", "FullName", "Gender", "TotalIncome", "ReporterIncome", "SpouseIncome",
           (1..max_income_length).map { |i| "Income#{i}" },
           (1..max_outcome_length).map { |i| "Outcome#{i}" },
