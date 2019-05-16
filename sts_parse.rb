@@ -98,7 +98,7 @@ Dir.glob("files/2017/*.csv").each_with_index do |f, index|
     workplace = workbook[offset + offset_start_row - 1][7].strip
     full_name = (workbook[offset + offset_start_row + 1][4] || workbook[offset + offset_start_row + 1][3] || workbook[offset + offset_start_row][4] || workbook[offset + offset_start_row][3]).strip
     position = (workbook[offset + offset_start_row + 1][9] || workbook[offset + offset_start_row][9]).strip
-    place = find_location(workplace)
+    place = find_location(workbook[offset + offset_start_row - 1][4].strip)
     cleaned_position = clean_position(position)
     gender = detect_gender(full_name)
 
