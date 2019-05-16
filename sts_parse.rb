@@ -95,7 +95,7 @@ Dir.glob("files/2017/*.csv").each_with_index do |f, index|
     offset_start_row = (1..10).find { |x| workbook[offset + x][1] && workbook[offset + x][1].include?("налоговый") }
     inn = workbook[offset + offset_start_row + 1][1].strip
     offset_start_row = (1..10).find { |x| workbook[offset + x][1] && (workbook[offset + x][1].include?("Ф.И.О.") || workbook[offset + x][1].include?("ФИО") || workbook[offset + x][1].include?("Ф.И.О")) }
-    workplace = workbook[offset + offset_start_row - 1][4].strip
+    workplace = workbook[offset + offset_start_row - 1][7].strip
     full_name = (workbook[offset + offset_start_row + 1][4] || workbook[offset + offset_start_row + 1][3] || workbook[offset + offset_start_row][4] || workbook[offset + offset_start_row][3]).strip
     position = (workbook[offset + offset_start_row + 1][9] || workbook[offset + offset_start_row][9]).strip
     place = find_location(workplace)
